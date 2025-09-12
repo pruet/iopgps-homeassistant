@@ -1,33 +1,43 @@
 {
   "config": {
     "error": {
+      "entry_name_required": "Please enter a name for the entry.",
       "email_required": "Please enter your e-mail address.",
       "password_required": "Please enter your password."
     },
     "step": {
       "user": {
         "data": {
+          "entry_name": "Entry name to identify the account in HA",
           "email": "E-Mail",
-          "password": "Password"
+          "password": "Password",
+          "mark_alerts_as_read": "Mark alerts as read on finder portal after fetching them into HA",
+          "fetch_elevation": "Fetch elevation data based on position using Open Meteo API",
+          "force_battery": "Force creation of battery sensor for devices without battery defined in API"
         },
-        "description": "Add credentials for PAJ GPS Tracker (finder-portal.com).",
-        "title": "Authorization"
+        "description": "Set credentials for PAJ GPS account (finder-portal.com).",
+        "title": "PAJ GPS Configuration"
       }
     }
   },
   "options": {
     "error": {
+      "entry_name_required": "Please enter a name for the entry.",
       "email_required": "Please enter your e-mail address.",
       "password_required": "Please enter your password."
     },
     "step": {
-      "user": {
+      "init": {
         "data": {
+          "entry_name": "Entry name to identify the account in HA",
           "email": "E-Mail",
-          "password": "Password"
+          "password": "Password",
+          "mark_alerts_as_read": "Mark alerts as read on finder portal after fetching them into HA",
+          "fetch_elevation": "Fetch elevation data based on position using Open Meteo API",
+          "force_battery": "Force creation of battery sensor for devices without battery defined in API"
         },
-        "description": "Add credentials for PAJ GPS Tracker (finder-portal.com).",
-        "title": "Authorization"
+        "description": "Set credentials for PAJ GPS account (finder-portal.com).",
+        "title": "PAJ GPS Configuration"
       }
     }
   }
