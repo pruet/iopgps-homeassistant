@@ -1,7 +1,7 @@
 """
-Main class for PajGPS data handling.
+Main class for IOPGPS data handling.
 Singleton class to handle data fetching and storing for all the sensors to read from.
-This class is responsible for fetching data from the PajGPS API and storing it.
+This class is responsible for fetching data from the IOPGPS API and storing it.
 It also acts as a gateway for the sensors to make only few API calls which results all sensors can read
 instead of each sensor making its own API calls.
 """
@@ -22,7 +22,7 @@ API_URL = "https://open.iopgps.com/api/"
 
 
 class IOPGPSDevice:
-    """Representation of single Paj GPS device."""
+    """Representation of single IOPGPS device."""
  
     # Basic attributes
     imei: str
@@ -44,7 +44,7 @@ class IOPGPSPositionData:
     address: str
 
     def __init__(self, imei: str, lat: str, lng: str, gpsTime: int, address: str) -> None:
-        """Initialize the PajGPSTracking class."""
+        """Initialize the IOPGPSTracking class."""
         self.imei = imei
         self.lat = lat
         self.lng = lng
@@ -114,7 +114,7 @@ class IOPGPSData:
     @classmethod
     def clean_instances(cls) -> None:
         """
-        Clean all instances of PajGPSData.
+        Clean all instances of IOPGPSData.
         This is used for testing purposes to reset the singleton instances.
         """
         IOPGPSDataInstances.clear()
@@ -229,7 +229,7 @@ class IOPGPSData:
 
     async def async_update(self, forced: bool = False) -> None:
         """
-        Update the data from the PajGPS API.
+        Update the data from the IOPGPS API.
         This method is called by the update coordinator.
         It fetches the data from the API and updates the internal state.
         """
@@ -349,5 +349,5 @@ class IOPGPSData:
         except TimeoutError as e:
             _LOGGER.warning("Timeout while getting devices data.")
         except Exception as e:
-            _LOGGER.error(f"Error while updating Paj GPS devices: {e}")
+            _LOGGER.error(f"Error while updating IOPGPS devices: {e}")
             self.devices = []

@@ -33,12 +33,12 @@ async def async_setup_entry(
 async def async_initialize_data(entry: config_entries.ConfigEntry):
     """Initialize the IOPGPS data object."""
     try:
-        # Create a new PajGPSData object
+        # Create a new IOPGPSData object
         data = IOPGPSData.get_instance(entry.data["guid"], entry.data["entry_name"], entry.data["user"], entry.data["key"])
         # Initialize the data object
         await data.async_update(True)
     except Exception as e:
-        _LOGGER.error(f"Failed to initialize PajGPS data: {e}")
+        _LOGGER.error(f"Failed to initialize IOPGPS data: {e}")
 
 async def async_remove_config_entry_device(
     hass: core.HomeAssistant, config_entry: config_entries.ConfigEntry, device_entry

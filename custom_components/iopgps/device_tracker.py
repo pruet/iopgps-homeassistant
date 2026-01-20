@@ -1,7 +1,7 @@
 """
 Platform for GPS sensor integration.
 This module is responsible for setting up the GPS sensor entities
-and updating their state based on the data received from the Paj GPS API.
+and updating their state based on the data received from the IOPGPS API.
 """
 from __future__ import annotations
 
@@ -92,7 +92,7 @@ async def async_setup_entry(
     async_add_entities,
 ):
     """Add sensors for passed config_entry in HA."""
-    _LOGGER.debug("Starting setup for PAJ GPS integration")
+    _LOGGER.debug("Starting setup for IOPGPS integration")
 
     # Get the entry name
     entry_name = config_entry.data.get("entry_name", "My IOPGPS account")
@@ -100,18 +100,18 @@ async def async_setup_entry(
     # Validate email and password
     guid = config_entry.data.get("guid")
     user = config_entry.data.get("user")
-    key = config_entry.data.get("keyd")
+    key = config_entry.data.get("key")
     if not user or not key:
         _LOGGER.error("Username or key not set in config entry")
         return
 
-    # Create main Paj GPS data object from pajgpks_data.py
+    # Create main IOPGPS data object from iopgps_data.py
     iopgps_data = IOPGPSData.get_instance(guid, entry_name, user, key) # type: ignore
 
     # Update the data
     await iopgps_data.async_update()
 
-    # Add the Paj GPS position sensors to the entity registry
+    # Add the IOPGPS position sensors to the entity registry
     devices = iopgps_data.get_device_ids()
     if devices is not None:
         _LOGGER.debug("Adding IOPGPS position sensors")

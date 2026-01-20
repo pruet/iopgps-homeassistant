@@ -74,7 +74,7 @@ class IOPGPSDataTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_two_instances(self):
         """
-        Test that two instances of PajGPSData are created with different entry names.
+        Test that two instances of IOPGPSData are created with different entry names.
         """
         entry_name_1 = "test_entry_1"
         entry_name_2 = "test_entry_2"

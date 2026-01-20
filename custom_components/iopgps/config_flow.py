@@ -1,4 +1,4 @@
-"""Config flow for PAJ GPS Tracker integration."""
+"""Config flow for IOPGPS Tracker integration."""
 from __future__ import annotations
 import logging
 import uuid
@@ -17,7 +17,7 @@ big_int = vol.All(vol.Coerce(int), vol.Range(min=300))
 _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = vol.Schema(
             {
-                vol.Required('entry_name', default='My Paj GPS Account'): cv.string,
+                vol.Required('entry_name', default='My IOPGPS Account'): cv.string,
                 vol.Required('user', default=''): cv.string,
                 vol.Required('key', default=''): cv.string,
             }
@@ -95,7 +95,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     'key': user_input['key'],
                 }
 
-                # Get existing instance of PajGPSData
+                # Get existing instance of IOPGPSData
                 iop_data = IOPGPSData.get_instance(
                     self.config_entry.data['guid'],
                     self.config_entry.data['entry_name'],

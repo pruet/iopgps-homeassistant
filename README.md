@@ -34,8 +34,8 @@ While this integration was primarily tested with the **GPS30**, it leverages the
 repository into the `custom_components/iopgps` directory.
 2. Restart Home Assistant.
 3. Start the configuration flow:
-   - [![Start Config Flow](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=pajgps)
-   - Or: Go to `Configuration` -> `Integrations` and click the `+ Add Integration`. Select `PAJ GPS` from the list.
+   - [![Start Config Flow](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=iopgps)
+   - Or: Go to `Configuration` -> `Integrations` and click the `+ Add Integration`. Select `IOPGPS` from the list.
    - If the integration is not found try to refresh the HA page without using cache (Ctrl+F5).
 4. Provide your user name and API key you get from the website. This data will be saved only in your Home Assistant and is required to generate authorization token.
 5. Device Tracker Entities will be created for all your devices.

@@ -148,7 +148,7 @@ async def async_setup_entry(
         _LOGGER.error("User or key not set in config entry")
         return
 
-    # Create main Paj GPS data object from pajgps_data.py
+    # Create main IOPGPS data object from iopgps_data.py
     iopgps_data = IOPGPSData.get_instance(guid, entry_name, user, key) # type: ignore
 
     # Update the data

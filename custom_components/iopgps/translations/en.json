@@ -15,8 +15,8 @@
           "fetch_elevation": "Fetch elevation data based on position using Open Meteo API",
           "force_battery": "Force creation of battery sensor for devices without battery defined in API"
         },
-        "description": "Set credentials for PAJ GPS account (finder-portal.com).",
-        "title": "PAJ GPS Configuration"
+        "description": "Set credentials for IOPGPS account (finder-portal.com).",
+        "title": "IOPGPS Configuration"
       }
     }
   },
@@ -36,8 +36,8 @@
           "fetch_elevation": "Fetch elevation data based on position using Open Meteo API",
           "force_battery": "Force creation of battery sensor for devices without battery defined in API"
         },
-        "description": "Set credentials for PAJ GPS account (finder-portal.com).",
-        "title": "PAJ GPS Configuration"
+        "description": "Set credentials for IOPGPS account (finder-portal.com).",
+        "title": "IOPGPS Configuration"
       }
     }
   }
