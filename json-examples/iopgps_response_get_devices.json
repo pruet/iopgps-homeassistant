@@ -1,0 +1,30 @@
+{
+    "code": 0,
+    "data": [
+        {
+            "code": 0,
+            "imei": "86301917888888",
+            "mobile": "0673120999",
+            "deviceName": "KimMim",
+            "isWireless": 1,
+            "deviceType": "GP30",
+            "activateTime": 1756994516,
+            "platformEndTime": 1788530516
+        },
+        {
+            "code": 0,
+            "imei": "863019175999999",
+            "mobile": "067888999",
+            "deviceName": "MaLoon",
+            "isWireless": 1,
+            "deviceType": "GP30",
+            "activateTime": 1758369847,
+            "platformEndTime": 1789905847
+        }
+    ],
+    "page": {
+        "pageSize": 20,
+        "currentPage": 1,
+        "count": 2
+    }
+}

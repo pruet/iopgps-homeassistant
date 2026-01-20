@@ -1,0 +1,38 @@
+{
+  "config": {
+    "error": {
+      "entry_name_required": "Please enter a name for the entry.",
+      "user_required": "Please enter your user name.",
+      "key_required": "Please enter your API key."
+    },
+    "step": {
+      "user": {
+        "data": {
+          "entry_name": "Entry name to identify the account in HA",
+          "user": "User",
+          "key": "API Key"
+        },
+        "description": "Set credentials for IOPGPS API account.",
+        "title": "IOPGPS Configuration"
+      }
+    }
+  },
+  "options": {
+    "error": {
+      "entry_name_required": "Please enter a name for the entry.",
+      "user_required": "Please enter your user name.",
+      "key_required": "Please enter your API key."
+    },
+    "step": {
+      "init": {
+        "data": {
+          "entry_name": "Entry name to identify the account in HA",
+          "user": "User",
+          "key": "API Key"
+        },
+        "description": "Set credentials for IOPGPS API account.",
+        "title": "IOPGPS Configuration"
+      }
+    }
+  }
+}

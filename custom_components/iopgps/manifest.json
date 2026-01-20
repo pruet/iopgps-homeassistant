@@ -1,0 +1,13 @@
+{
+  "domain": "iopgps",
+  "name": "IOPGPS",
+  "documentation": "https://github.com/pruet/iopgps-homeassistant",
+  "dependencies": [],
+  "codeowners": ["Pruet"],
+  "requirements": [],
+  "iot_class": "cloud_polling",
+  "config_flow": true,
+  "version": "0.1.0",
+  "integration_type": "service",
+  "supported_platforms": ["device_tracker", "sensor"]
+}

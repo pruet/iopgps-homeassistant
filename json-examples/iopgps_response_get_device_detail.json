@@ -1,0 +1,46 @@
+{
+    "code": 0,
+    "data": {
+        "deviceStatus": {
+            "imei": "863019175999999",
+            "status": 2,
+            "gpsTime": 1768814000,
+            "heartTime": 1768814000,
+            "statusTime": 1768814900,
+            "lng": "99.914999",
+            "lat": "19.714999",
+            "locationType": 1,
+            "speed": 0,
+            "accStatus": false,
+            "address": "Laddawan farm, Huai Sak, Mueang Chiang Rai District, Chiang Rai 57000",
+            "batteryPercentage": 57,
+            "todayMile": "0",
+            "totalMile": "0"
+        },
+        "deviceBrief": {
+            "imei": "863019175999999",
+            "name": "KimMim",
+            "deviceType": "GP30",
+            "importTime": 1752762731,
+            "activateTime": 1756994516,
+            "endTime": 1788530516,
+            "deviceMobile": "0673120999",
+            "saleTime": 1752762731,
+            "useStatus": 1
+        },
+        "account": {
+            "accountId": 10569999,
+            "accountName": "JD9999",
+            "userName": "JD9999",
+            "root": 0,
+            "isExpired": 0
+        }
+    },
+    "resultStatusBean": {
+        "code": 0
+    },
+    "success": true,
+    "resultBean": {
+        "code": 0
+    }
+}

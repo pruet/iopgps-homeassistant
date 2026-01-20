@@ -4,10 +4,10 @@ from homeassistant import config_entries, core
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
-from .pajgps_data import PajGPSData
+from .iopgps_data import IOPGPSData
 from .const import DOMAIN
 
-PLATFORMS: list[Platform] = [Platform.DEVICE_TRACKER, Platform.SENSOR, Platform.BINARY_SENSOR, Platform.SWITCH]
+PLATFORMS: list[Platform] = [Platform.DEVICE_TRACKER, Platform.SENSOR]
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass: core.HomeAssistant, config: dict) -> bool:
@@ -31,10 +31,10 @@ async def async_setup_entry(
     return True
 
 async def async_initialize_data(entry: config_entries.ConfigEntry):
-    """Initialize the PajGPS data object."""
+    """Initialize the IOPGPS data object."""
     try:
         # Create a new PajGPSData object
-        data = PajGPSData.get_instance(entry.data["guid"], entry.data["entry_name"], entry.data["email"], entry.data["password"], entry.data["mark_alerts_as_read"], entry.data["fetch_elevation"], entry.data["force_battery"])
+        data = IOPGPSData.get_instance(entry.data["guid"], entry.data["entry_name"], entry.data["user"], entry.data["key"])
         # Initialize the data object
         await data.async_update(True)
     except Exception as e:
@@ -46,8 +46,8 @@ async def async_remove_config_entry_device(
     """Remove a device from the integration."""
     return True
 
-    _LOGGER.warning("Device not found: %s", device_entry.id)
-    return False
+    # _LOGGER.warning("Device not found: %s", device_entry.id)
+    # return False
 
 async def _async_update_listener(hass: HomeAssistant, config_entry):
     """Handle config options update."""
