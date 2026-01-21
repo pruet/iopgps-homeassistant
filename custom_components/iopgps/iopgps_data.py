@@ -27,7 +27,6 @@ class IOPGPSDevice:
     # Basic attributes
     imei: str
     name: str
-    mobile:str
     battery_percentage: str
 
     def __init__(self, imei: str) -> None:
@@ -53,20 +52,19 @@ class IOPGPSPositionData:
 
 class AuthenResponse:
     token:str
-    expiresIn:int 
+    expiresIn:int
 
     def __init__(self, json):
         self.token = json["accessToken"]
-        self.expiresIn = json["expiresIn"]
+        self.expiresIn = int(json["expiresIn"])
 
     def __str__(self):
-        return f"token: {self.token}, userID: {self.expiresIn}"
+        return f"token: {self.token}, expiresIn: {self.expiresIn}"
 
 class ApiError(Exception):
     error = None
     def __init__(self, json):
         self.error = json["error"]
-
 
 IOPGPSDataInstances: dict[str, "IOPGPSData"] = {}
 
@@ -79,7 +77,7 @@ class IOPGPSData:
     user: str
     key: str
     token: str
-    expiresIn: int
+    expiresIn: int = 0
 
     # Update properties
     update_lock = asyncio.Lock()
@@ -101,6 +99,7 @@ class IOPGPSData:
         self.entry_name = entry_name
         self.user = user
         self.key = key
+        self.expiresIn = 0
 
     @classmethod
     def get_instance(cls, guid: str, entry_name: str, user: str, key: str) -> "IOPGPSData":
@@ -192,7 +191,6 @@ class IOPGPSData:
             return None
 
     async def refresh_token(self, forced: bool = False) -> None:
-        # Refresh token once every 10 minutes
         if (int(time.time()) > self.expiresIn) or self.token is None or forced:
             _LOGGER.debug("Refreshing token...")
             try:
@@ -271,8 +269,7 @@ class IOPGPSData:
                     },
                     "name": f"{device.name}",
                     "manufacturer": "IOPGPS",
-                    "mobile": device.mobile,
-                    "battery_percentage": device.battery_percentage,
+                    "model" : "GPS Tracker",
                     "sw_version": VERSION,
                 }
         return None
@@ -326,20 +323,19 @@ class IOPGPSData:
         """
         url = API_URL + "device"
         headers = self.get_standard_headers() # Assuming get_standard_headers() returns a dict
+        _LOGGER.info("Headers: %s", headers)
         try:
-            json = await self.make_get_request(url, headers, params={}) # Pass an empty dict for params
+            json = await self.make_get_request(url, headers=headers, params={}) # Pass an empty dict for params
             new_devices = []
             for device in json["data"]: # type: ignore
                 url = API_URL + "device/detail/"
                 parameters = {
                     "imei": device["imei"]
                 }
-                json_device = await self.make_get_request(url, headers, params=parameters)
+                json_device = await self.make_get_request(url, headers=headers, params=parameters)
                 json_device = json_device["data"] #type: ignore
                 device_data = IOPGPSDevice(device["imei"])
-                device_data.name = device["name"]
-                device_data.imei = device["imei"]
-                device_data.mobile = device["mobile"]
+                device_data.name = json_device["deviceBrief"]["name"]
                 device_data.battery_percentage = json_device["deviceStatus"]["batteryPercentage"]
                 new_devices.append(device_data)
             self.devices = new_devices

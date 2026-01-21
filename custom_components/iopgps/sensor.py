@@ -25,15 +25,15 @@ class IOPGPSBatterySensor(SensorEntity):
     Takes the data from base IOPGPSData object created in async_setup_entry.
     """
     _iopgps_data:IOPGPSData
-    _device_imie:str
+    _device_imei:str
     _battery_level: int
 
-    def __init__(self, iopgps_data: IOPGPSData, device_imie: str) -> None:
+    def __init__(self, iopgps_data: IOPGPSData, device_imei: str) -> None:
         """Initialize the sensor."""
         self._iopgps_data = iopgps_data
-        self._device_imie = device_imie
-        self._device_name = f"{self._iopgps_data.get_device(device_imie).name}" # type: ignore
-        self._attr_unique_id = f"iopgps_{self._iopgps_data.guid}_{self._device_imie}_battery"
+        self._device_imei = device_imei
+        self._device_name = f"{self._iopgps_data.get_device(device_imei).name}" # type: ignore
+        self._attr_unique_id = f"iopgps_{self._iopgps_data.guid}_{self._device_imei}_battery"
         self._attr_name = f"{self._device_name} Battery Level"
         self._attr_icon = "mdi:battery"
 
@@ -41,8 +41,8 @@ class IOPGPSBatterySensor(SensorEntity):
         """Update the sensor state."""
         try:
             await self._iopgps_data.async_update()
-            position_data:IOPGPSPositionData = self._iopgps_data.get_position(self._device_imie)  # type: ignore
-            device_data:IOPGPSDevice = self._iopgps_data.get_device(self._device_imie)  # type: ignore
+            position_data:IOPGPSPositionData = self._iopgps_data.get_position(self._device_imei)  # type: ignore
+            device_data:IOPGPSDevice = self._iopgps_data.get_device(self._device_imei)  # type: ignore
             if position_data is not None:
                 if device_data.battery_percentage is not None: # type: ignore
                     self._battery_level = device_data.battery_percentage  # type: ignore
@@ -57,7 +57,7 @@ class IOPGPSBatterySensor(SensorEntity):
         """Return the device info."""
         if self._iopgps_data is None:
             return None
-        return self._iopgps_data.get_device_info(self._device_imie) # type: ignore
+        return self._iopgps_data.get_device_info(self._device_imei) # type: ignore
 
     @property
     def should_poll(self) -> bool: # type: ignore
