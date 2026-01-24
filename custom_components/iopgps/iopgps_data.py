@@ -178,7 +178,7 @@ class IOPGPSData:
         try:
             json = await self.make_post_request(url, headers, payload=payload, params=params)
             authen_response = AuthenResponse(json)
-            self.expiresIn = authen_response.expiresIn
+            self.expiresIn = int(authen_response.expiresIn) + int(time.time())
             self.token = authen_response.token
             return authen_response.token
         except ApiError as e:
