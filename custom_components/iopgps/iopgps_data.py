@@ -17,21 +17,45 @@ from custom_components.iopgps.const import DOMAIN, VERSION
 
 _LOGGER = logging.getLogger(__name__)
 SCAN_INTERVAL = timedelta(seconds=30)
-REQUEST_TIMEOUT = 5  # 5 seconds x 3 requests per update = 24 seconds (must stay below SCAN_INTERVAL)
+REQUEST_TIMEOUT = 10  # 10 seconds per request
 API_URL = "https://open.iopgps.com/api/"
 
 
 class IOPGPSDevice:
     """Representation of single IOPGPS device."""
- 
+
     # Basic attributes
     imei: str
-    name: str
-    battery_percentage: str
+    name: str | None = None
+    battery_percentage: int | None = None
+    speed: float | None = None
+    status: int | None = None
+    status_desc: str | None = None
+    today_mile: float | None = None
+    total_mile: float | None = None
+    location_type: int | None = None
+    address: str | None = None
+    device_mobile: str | None = None
+    end_time: int | None = None
+    gps_time: int | None = None
+    heart_time: int | None = None
 
     def __init__(self, imei: str) -> None:
         """Initialize the IOPGPSDevice class."""
         self.imei = imei
+        self.name = None
+        self.battery_percentage = None
+        self.speed = None
+        self.status = None
+        self.status_desc = None
+        self.today_mile = None
+        self.total_mile = None
+        self.location_type = None
+        self.address = None
+        self.device_mobile = None
+        self.end_time = None
+        self.gps_time = None
+        self.heart_time = None
 
 class IOPGPSPositionData:
     """Representation of single IOPGPS device tracking data."""
@@ -76,8 +100,9 @@ class IOPGPSData:
     # Credentials properties
     user: str
     key: str
-    token: str
+    token: str | None = None
     expiresIn: int = 0
+    last_update: float = 0
 
     # Update properties
     update_lock = asyncio.Lock()
@@ -99,7 +124,11 @@ class IOPGPSData:
         self.entry_name = entry_name
         self.user = user
         self.key = key
+        self.token = None
         self.expiresIn = 0
+        self.last_update = 0
+        self.devices = []
+        self.positions = []
 
     @classmethod
     def get_instance(cls, guid: str, entry_name: str, user: str, key: str) -> "IOPGPSData":
@@ -121,30 +150,27 @@ class IOPGPSData:
     @staticmethod
     async def make_get_request(url: str, headers: dict, params: dict, timeout: int = REQUEST_TIMEOUT):
         """Reusable function for making GET requests."""
-        async with aiohttp.ClientSession(timeout=ClientTimeout(total=timeout)) as session:
-            async with session.get(url, headers=headers, params=params, timeout=ClientTimeout(total=timeout)) as response:
+        connector = aiohttp.TCPConnector(resolver=aiohttp.ThreadedResolver())
+        async with aiohttp.ClientSession(connector=connector, timeout=ClientTimeout(total=timeout)) as session:
+            async with session.get(url, headers=headers, params=params) as response:
+                json_data = await response.json()
                 if response.status == 200:
-                    return await response.json()
+                    return json_data
                 else:
-                    json = await response.json()
-                    if json.get("error"):
-                        raise ApiError(json)
-        # Close the session
-        await session.close()
+                    raise ApiError(json_data)
 
     @staticmethod
     async def make_post_request(url: str, headers: dict, payload: dict, params: dict,
                                 timeout: int = REQUEST_TIMEOUT):
         """Reusable function for making POST requests."""
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, headers=headers, json=payload, params=params, timeout=ClientTimeout(total=timeout)) as response:
+        connector = aiohttp.TCPConnector(resolver=aiohttp.ThreadedResolver())
+        async with aiohttp.ClientSession(connector=connector, timeout=ClientTimeout(total=timeout)) as session:
+            async with session.post(url, headers=headers, json=payload, params=params) as response:
+                json_data = await response.json()
                 if response.status == 200:
-                    return await response.json()
+                    return json_data
                 else:
-                    json = await response.json()
-                    raise ApiError(json)
-        # Close the session
-        await session.close()
+                    raise ApiError(json_data)
 
     async def get_authen_token(self) -> str | None:
         """
@@ -161,6 +187,10 @@ class IOPGPSData:
         Signature = md5(md5(key)+time), See https://www.iopgps.com/doc/view?api=iop#tag/1.Authentication/paths/~1api~1auth/post
         Returns LoginResponse.token or None
         """
+        if not self.user or not self.key:
+            _LOGGER.error("Cannot authenticate: user or key not set")
+            return None
+
         timestamp = str(int(time.time()))
         signature = hashlib.md5((hashlib.md5(self.key.encode()).hexdigest() + timestamp).encode()).hexdigest()
 
@@ -184,18 +214,17 @@ class IOPGPSData:
         except ApiError as e:
             _LOGGER.error(f"Error while getting login token: {e.error}")
             return None
-        except TimeoutError as e:
+        except TimeoutError:
             _LOGGER.error("Timeout while getting login token.")
+            return None
         except Exception as e:
             _LOGGER.error(f"Error while getting login token: {e}")
             return None
 
     async def refresh_token(self, forced: bool = False) -> None:
-        if (int(time.time()) > self.expiresIn) or self.token is None or forced:
+        if (int(time.time()) >= self.expiresIn) or self.token is None or forced:
             _LOGGER.debug("Refreshing token...")
             try:
-                self.user = self.user
-                self.key = self.key
                 # Fetch new token
                 new_token = await self.get_authen_token()
                 if new_token:
@@ -203,8 +232,10 @@ class IOPGPSData:
                     _LOGGER.debug("Token refreshed successfully.")
                 else:
                     _LOGGER.error("Failed to refresh token.")
-            except TimeoutError as e:
+                    self.clean_data()
+            except TimeoutError:
                 _LOGGER.error("Timeout while getting login token.")
+                self.clean_data()
             except Exception as e:
                 _LOGGER.error(f"Error during token refresh: {e}")
                 self.clean_data()
@@ -221,7 +252,8 @@ class IOPGPSData:
         :return: dict with headers
         """
         return {
-            'accessToken' : f'{self.token}'
+            'accessToken': f'{self.token}' if self.token else '',
+            'accept': 'application/json',
         }
 
 
@@ -231,21 +263,21 @@ class IOPGPSData:
         This method is called by the update coordinator.
         It fetches the data from the API and updates the internal state.
         """
-        # Check if we need to update data
-        if (int(time.time()) > self.expiresIn) and not forced:
-            return
-
         async with self.update_lock:
-            # Check again if we need to update data
-            if (int(time.time()) > self.expiresIn) and not forced:
+            # Throttle requests if polled within 10 seconds unless forced
+            if not forced and (time.time() - self.last_update < 10):
                 return
 
             # Check if we need to refresh token
-            await self.refresh_token()
+            await self.refresh_token(forced=forced)
+            if not self.token:
+                _LOGGER.error("Cannot update IOPGPS data: No valid authentication token")
+                return
 
             # Fetch the new data from the API
             await self.update_devices_data()
             await self.update_position_data()
+            self.last_update = time.time()
 
 
     def get_device(self, device_imei: str) -> IOPGPSDevice | None:
@@ -283,67 +315,138 @@ class IOPGPSData:
  
     async def update_position_data(self) -> None:
         """
-        Gets the position data for all the devices from API and saves them in self.positions_json and self.positions.
+        Gets the position data for all the devices from API and saves them in self.positions.
         Using aiohttp to avoid blocking.
-        Corresponding CURL command:
-
-        curl --location 'https://open.iopgps.com/api/device/location?imei=863019175495698' \
-            --header 'accessToken: 1234560800eb43d8ace818b9867a987a'
-            --data ''
         """
         url = API_URL + "device/location"
         headers = self.get_standard_headers()
-        try:
-            positions = []
-            for device in self.devices:
-                params = {
-                    "imei": device.imei
-                }
+        positions_by_imei = {pos.imei: pos for pos in self.positions}
+        for device in self.devices:
+            params = {
+                "imei": device.imei
+            }
+            try:
                 json = await self.make_get_request(url, headers=headers, params=params)
-                # self.positions_json = json
-                pos = IOPGPSPositionData(device.imei, json["lat"], json["lng"], int(json["gpsTime"]), json["address"]) # type: ignore
-                positions.append(pos)
-            self.positions = positions
-        except ApiError as e:
-            _LOGGER.error(f"Error while getting tracking data: {e.error}")
-            self.positions = []
-        except TimeoutError as e:
-            _LOGGER.warning("Timeout while getting tracking data.")
-        except Exception as e:
-            _LOGGER.error(f"Error updating position data: {e}")
-            self.positions = []
+                pos = IOPGPSPositionData(
+                    device.imei,
+                    json.get("lat"),
+                    json.get("lng"),
+                    int(json.get("gpsTime", 0)),
+                    json.get("address", "")
+                )
+                positions_by_imei[device.imei] = pos
+            except ApiError as e:
+                _LOGGER.error(f"Error while getting tracking data for {device.imei}: {e.error}")
+            except (TimeoutError, asyncio.TimeoutError):
+                _LOGGER.warning(f"Timeout while getting tracking data for {device.imei}.")
+            except Exception as e:
+                _LOGGER.error(f"Error updating position data for {device.imei}: {e}")
+
+        self.positions = list(positions_by_imei.values())
 
     async def update_devices_data(self) -> None:
         """
-        Gets info about all devices in the account from the API and saves them in self.devices_json and self.devices.
+        Gets info about all devices in the account from the API and saves them in self.devices.
         Using aiohttp to avoid blocking.
-        Corresponding CURL command:
-        curl --location 'https://open.iopgps.com/api/device/' \
-        --header 'accessToken: 1234560800eb43d8ace818b9867a987a'
         """
         url = API_URL + "device"
-        headers = self.get_standard_headers() # Assuming get_standard_headers() returns a dict
-        _LOGGER.info("Headers: %s", headers)
+        headers = self.get_standard_headers()
         try:
-            json = await self.make_get_request(url, headers=headers, params={}) # Pass an empty dict for params
-            new_devices = []
-            for device in json["data"]: # type: ignore
-                url = API_URL + "device/detail/"
-                parameters = {
-                    "imei": device["imei"]
-                }
-                json_device = await self.make_get_request(url, headers=headers, params=parameters)
-                json_device = json_device["data"] #type: ignore
-                device_data = IOPGPSDevice(device["imei"])
-                device_data.name = json_device["deviceBrief"]["name"]
-                device_data.battery_percentage = json_device["deviceStatus"]["batteryPercentage"]
-                new_devices.append(device_data)
-            self.devices = new_devices
+            json = await self.make_get_request(url, headers=headers, params={})
+            devices_list = json.get("data", [])
         except ApiError as e:
-            _LOGGER.error(f"Error while getting devices data: {e.error}")
-            self.devices = []
-        except TimeoutError as e:
-            _LOGGER.warning("Timeout while getting devices data.")
+            _LOGGER.error(f"Error while getting devices list: {e.error}")
+            return
+        except (TimeoutError, asyncio.TimeoutError):
+            _LOGGER.warning("Timeout while getting devices list.")
+            return
         except Exception as e:
             _LOGGER.error(f"Error while updating IOPGPS devices: {e}")
-            self.devices = []
+            return
+
+        devices_by_imei = {dev.imei: dev for dev in self.devices}
+        for device in devices_list:
+            imei = device.get("imei")
+            if not imei:
+                continue
+            detail_url = API_URL + "device/detail/"
+            parameters = {"imei": imei}
+            try:
+                json_device = await self.make_get_request(detail_url, headers=headers, params=parameters)
+                data_dict = json_device.get("data", {})
+                device_status = data_dict.get("deviceStatus", {})
+                device_brief = data_dict.get("deviceBrief", {})
+
+                device_data = devices_by_imei.get(imei, IOPGPSDevice(imei))
+                device_data.imei = imei
+
+                name = device_brief.get("name")
+                if name:
+                    device_data.name = name
+                device_data.device_mobile = device_brief.get("deviceMobile")
+                device_data.end_time = device_brief.get("endTime")
+
+                # Parse battery percentage
+                bat = device_status.get("batteryPercentage")
+                if bat is not None:
+                    try:
+                        device_data.battery_percentage = int(bat)
+                    except (ValueError, TypeError):
+                        pass
+
+                # Parse speed
+                spd = device_status.get("speed")
+                if spd is not None:
+                    try:
+                        device_data.speed = float(spd)
+                    except (ValueError, TypeError):
+                        pass
+
+                # Parse status & description
+                st = device_status.get("status")
+                if st is not None:
+                    try:
+                        device_data.status = int(st)
+                    except (ValueError, TypeError):
+                        pass
+                if "statusDesc" in device_status:
+                    device_data.status_desc = device_status.get("statusDesc")
+
+                # Parse todayMile & totalMile
+                tm = device_status.get("todayMile")
+                if tm is not None:
+                    try:
+                        device_data.today_mile = float(tm)
+                    except (ValueError, TypeError):
+                        pass
+
+                tot = device_status.get("totalMile")
+                if tot is not None:
+                    try:
+                        device_data.total_mile = float(tot)
+                    except (ValueError, TypeError):
+                        pass
+
+                loc_type = device_status.get("locationType")
+                if loc_type is not None:
+                    try:
+                        device_data.location_type = int(loc_type)
+                    except (ValueError, TypeError):
+                        pass
+
+                if "address" in device_status:
+                    device_data.address = device_status.get("address")
+                if "gpsTime" in device_status:
+                    device_data.gps_time = device_status.get("gpsTime")
+                if "heartTime" in device_status:
+                    device_data.heart_time = device_status.get("heartTime")
+
+                devices_by_imei[imei] = device_data
+            except ApiError as e:
+                _LOGGER.error(f"Error getting detail for device {imei}: {e.error}")
+            except (TimeoutError, asyncio.TimeoutError):
+                _LOGGER.warning(f"Timeout getting detail for device {imei}.")
+            except Exception as e:
+                _LOGGER.error(f"Error getting detail for device {imei}: {e}")
+
+        self.devices = list(devices_by_imei.values())

@@ -25,10 +25,8 @@ class IOPGPSDataTest(unittest.IsolatedAsyncioTestCase):
         """
         Test if credentials are set and if login token is valid.
         """
-        assert self.data.user is not None
-        assert self.data.key is not None
-        if self.data.user is None or self.data.key is None:
-            return
+        if not self.data.user or not self.data.key:
+            self.skipTest("IOPGPS_USER or IOPGPS_KEY not set in environment")
         # Test login with valid credentials
         token = await self.data.get_authen_token()
         assert token is not None
@@ -49,10 +47,14 @@ class IOPGPSDataTest(unittest.IsolatedAsyncioTestCase):
         """
         Test the async_update method.
         """
-        with (patch.object(self.data, 'refresh_token', new=AsyncMock()), \
-             patch.object(self.data, 'update_position_data', new=AsyncMock()), \
-             patch.object(self.data, 'update_devices_data', new=AsyncMock())):
-            await self.data.async_update()
+        self.data.token = "valid_token"
+        with (patch.object(self.data, 'refresh_token', new=AsyncMock()) as mock_refresh, \
+             patch.object(self.data, 'update_position_data', new=AsyncMock()) as mock_pos, \
+             patch.object(self.data, 'update_devices_data', new=AsyncMock()) as mock_dev):
+            await self.data.async_update(forced=True)
+            mock_refresh.assert_awaited_once()
+            mock_dev.assert_awaited_once()
+            mock_pos.assert_awaited_once()
 
 
     def test_get_standard_headers(self):
@@ -61,7 +63,7 @@ class IOPGPSDataTest(unittest.IsolatedAsyncioTestCase):
         """
         self.data.token = "test_token"
         headers = self.data.get_standard_headers()
-        assert headers["accessToken"] == "Bearer test_token"
+        assert headers["accessToken"] == "test_token"
         assert headers["accept"] == "application/json"
 
     async def test_refresh_token_skipped(self):
@@ -115,6 +117,8 @@ class IOPGPSDataTest(unittest.IsolatedAsyncioTestCase):
         """
         Test the update_position_data method.
         """
+        if not self.data.user or not self.data.key:
+            self.skipTest("IOPGPS_USER or IOPGPS_KEY not set in environment")
         await self.data.refresh_token()
         await self.data.update_devices_data()
         assert self.data.devices is not None

@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from .iopgps_data import IOPGPSData
 from .const import DOMAIN
 
-PLATFORMS: list[Platform] = [Platform.DEVICE_TRACKER, Platform.SENSOR]
+PLATFORMS: list[Platform] = [Platform.DEVICE_TRACKER, Platform.SENSOR, Platform.BINARY_SENSOR]
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass: core.HomeAssistant, config: dict) -> bool:
@@ -52,12 +52,6 @@ async def async_remove_config_entry_device(
 async def _async_update_listener(hass: HomeAssistant, config_entry):
     """Handle config options update."""
     # Reload the integration when the options change.
-    await hass.config_entries.async_reload(config_entry.entry_id)
-
-async def options_update_listener(
-    hass: core.HomeAssistant, config_entry: config_entries.ConfigEntry
-):
-    """Handle options update."""
     await hass.config_entries.async_reload(config_entry.entry_id)
 
 async def async_unload_entry(

@@ -7,7 +7,7 @@
   "requirements": [],
   "iot_class": "cloud_polling",
   "config_flow": true,
-  "version": "0.1.0",
+  "version": "0.3.0",
   "integration_type": "service",
-  "supported_platforms": ["device_tracker", "sensor"]
+  "supported_platforms": ["device_tracker", "sensor", "binary_sensor"]
 }

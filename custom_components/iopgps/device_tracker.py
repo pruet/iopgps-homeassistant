@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from homeassistant.components.device_tracker.config_entry import TrackerEntity
+from homeassistant.components.device_tracker import TrackerEntity
 from homeassistant.core import HomeAssistant
 from homeassistant import config_entries
 from homeassistant.helpers.entity import DeviceInfo # type: ignore
@@ -17,7 +17,7 @@ from custom_components.iopgps.iopgps_data import IOPGPSData
 import logging
 
 _LOGGER = logging.getLogger(__name__)
-SCAN_INTERVAL = timedelta(seconds=30)
+SCAN_INTERVAL = timedelta(seconds=60)
 
 class IOPGPSPositionSensor(TrackerEntity):
     """
@@ -33,7 +33,8 @@ class IOPGPSPositionSensor(TrackerEntity):
         """Initialize the sensor."""
         self._iopgps_data = iopgps_data
         self._device_imei = device_imei
-        self._device_name = f"{self._iopgps_data.get_device(device_imei).name}" # type: ignore
+        device = self._iopgps_data.get_device(device_imei)
+        self._device_name = f"{device.name}" if device and device.name else device_imei
         self._attr_unique_id = f"iopgps_{self._iopgps_data.guid}_{self._device_imei}_gps"
         self._attr_name = f"{self._device_name} Location"
         self._attr_icon = "mdi:map-marker"
@@ -71,14 +72,50 @@ class IOPGPSPositionSensor(TrackerEntity):
         """Return the source type, eg gps or router, of the device."""
         return "gps"
 
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Return extra device tracker attributes."""
+        attrs = {}
+        device = self._iopgps_data.get_device(self._device_imei)
+        position = self._iopgps_data.get_position(self._device_imei)
+
+        address = (position.address if position and position.address else None) or (device.address if device else None)
+        if address:
+            attrs["address"] = address
+
+        loc_type_map = {1: "GPS", 2: "LBS", 3: "WiFi"}
+        if device and device.location_type is not None:
+            attrs["location_type"] = loc_type_map.get(device.location_type, str(device.location_type))
+
+        if device and device.speed is not None:
+            attrs["speed_kmh"] = device.speed
+
+        if device and device.today_mile is not None:
+            attrs["today_distance_km"] = device.today_mile
+
+        if device and device.total_mile is not None:
+            attrs["total_distance_km"] = device.total_mile
+
+        if device and device.status_desc:
+            attrs["status_desc"] = device.status_desc
+
+        if device and device.device_mobile:
+            attrs["device_mobile"] = device.device_mobile
+
+        return attrs
+
     async def async_update(self) -> None:
         """Update the GPS sensor data."""
         await self._iopgps_data.async_update()
         position_data = self._iopgps_data.get_position(self._device_imei)
         if position_data is not None:
             if position_data.lat is not None and position_data.lng is not None:
-                self._latitude = float(position_data.lat)
-                self._longitude = float(position_data.lng)
+                try:
+                    self._latitude = float(position_data.lat)
+                    self._longitude = float(position_data.lng)
+                except (ValueError, TypeError):
+                    self._latitude = None
+                    self._longitude = None
             else:
                 self._latitude = None
                 self._longitude = None

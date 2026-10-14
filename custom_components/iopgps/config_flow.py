@@ -105,11 +105,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 iop_data.entry_name = new_data['entry_name']
                 iop_data.user = new_data['user']
                 iop_data.key = new_data['key']
-                self.hass.config_entries.async_update_entry(self.config_entry, data=new_data)
                 await iop_data.refresh_token(True)
                 await iop_data.async_update(True)
 
-                # Rename the entry in the UI
+                # Rename the entry in the UI and update data
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
                     data=new_data,
